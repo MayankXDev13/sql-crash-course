@@ -459,12 +459,9 @@ SELECT o.status, o.order_id, e.email, e.first_name
 FROM orders AS o
     INNER JOIN employees AS e ON e.employee_id = o.employee_id;
 
-
 -- give me all orders and include employee details of employee who processed
 -- that order and if it is directly coming from customer keep employee
 -- details empty
-
-
 
 -- LEFT JOIN
 -- Returns all rows from the left table, regardless of whether the ON condition is TRUE or FALSE.
@@ -477,8 +474,6 @@ FROM orders AS o
 SELECT o.status, o.order_id, e.email, e.first_name
 FROM orders AS o
     LEFT JOIN employees AS e ON e.employee_id = o.employee_id;
-
-
 
 -- RIGHT JOIN
 -- Returns all rows from the right table, regardless of whether the ON condition matches.
@@ -497,3 +492,49 @@ FROM orders AS o
 SELECT o.status, o.order_id, e.email, e.first_name
 FROM orders AS o
     FULL OUTER JOIN employees AS e ON e.employee_id = o.employee_id;
+
+-- CROSS JOIN
+-- Returns the Cartesian product of both tables, combining every row from the left table
+-- with every row from the right table.
+
+SELECT * FROM departments CROSS JOIN categories;
+
+-- Joins examples
+
+-- Give me all customers who did not place any order
+
+SELECT c.first_name, c.email, o.status, o.order_id
+FROM customers as c
+    LEFT JOIN orders as o ON o.customer_id = c.customer_id
+WHERE
+    o.status IS NULL;
+
+-- Give me orders which have not been paid
+SELECT *
+FROM orders as o
+    LEFT JOIN payments as p ON o.order_id = p.order_id
+WHERE
+    p.payment_id IS NULL;
+
+-- Give information about all orders thata are there in the DB
+-- Include info about order_items, product, customer and
+-- category the product belongs to
+
+SELECT o.order_id, o.status, oi.product_id, oi.unit_price, p.product_name, p.price, c.category_name, cu.first_name, cu.last_name
+FROM
+    orders AS o
+    LEFT JOIN order_items AS oi ON oi.order_id = o.order_id
+    LEFT JOIN products AS p ON p.product_id = oi.product_id
+    LEFT JOIN categories AS c ON c.category_id = p.category_id
+    LEFT JOIN customers AS cu ON cu.customer_id = o.customer_id;
+
+-- Give me info about employees including their manager's info;
+
+SELECT
+    emp.first_name as "Employee First Name",
+    emp.last_name as "Employee Last Name",
+    manager_tbl.first_name as "Manager First Name",
+    manager_tbl.last_name as "Manager Last Name"
+FROM
+    employees as emp
+    LEFT JOIN employees as manager_tbl on emp.manager_id = manager_tbl.employee_id;
