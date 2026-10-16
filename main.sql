@@ -411,40 +411,89 @@ SELECT
     COALESCE(city, 'No city') AS city
 FROM customers;
 
-
 -- Sorting
 -- Give me products from cheapest to expensive order
 
-SELECT * FROM products
-ORDER BY price DESC; -- ASC: ascending, DESC: descending
-
+SELECT * FROM products ORDER BY price DESC;
+-- ASC: ascending, DESC: descending
 
 -- Give me product form cheap to exp price for each category
-SELECT * FROM products
-ORDER BY category_id DESC, price ASC;
-
+SELECT * FROM products ORDER BY category_id DESC, price ASC;
 
 -- Give me top 5 most expensive products
 
-SELECT * FROM products
-ORDER BY price DESC
-LIMIT 10;
+SELECT * FROM products ORDER BY price DESC LIMIT 10;
 
-SELECT * FROM products
-ORDER BY price DESC;
+SELECT * FROM products ORDER BY price DESC;
 
 -- Pagination
-SELECT * FROM products
+SELECT *
+FROM products
 ORDER BY product_id
 LIMIT 10 -- page limit 
-OFFSET 20; -- skip row
+OFFSET
+    20;
+-- skip row
 
 -- FE: page: 1, 2, 3
 -- p: 1: OFFSET: 0
 -- p: 2: OFFSET: 10
 -- p: 3: OFFSET: 10 + 10: 20
 
-
--- formula in backend 
+-- formula in backend
 -- offset = (page - 1) * limit
 
+-- Joins Start
+
+-- Give me all orders including employee details of the employee who processed
+-- that order
+-- only include orders punched by employees
+
+SELECT * FROM orders;
+
+-- INNER JOIN
+-- Combines rows from two tables based on a specified ON condition.
+-- INNER JOIN is strict for both the table
+
+SELECT o.status, o.order_id, e.email, e.first_name
+FROM orders AS o
+    INNER JOIN employees AS e ON e.employee_id = o.employee_id;
+
+
+-- give me all orders and include employee details of employee who processed
+-- that order and if it is directly coming from customer keep employee
+-- details empty
+
+
+
+-- LEFT JOIN
+-- Returns all rows from the left table, regardless of whether the ON condition is TRUE or FALSE.
+-- Matching rows from the right table are included; if no match exists, NULL values are returned.
+-- LEFT JOIN is strict for RIGHT SIDE table
+
+-- left table is orders
+-- right table is employees
+
+SELECT o.status, o.order_id, e.email, e.first_name
+FROM orders AS o
+    LEFT JOIN employees AS e ON e.employee_id = o.employee_id;
+
+
+
+-- RIGHT JOIN
+-- Returns all rows from the right table, regardless of whether the ON condition matches.
+-- Matching rows from the left table are included; if no match exists, NULL values are returned.
+-- RIGHT JOIN is strict for LEFT SIDE table
+
+SELECT o.status, o.order_id, e.email, e.first_name
+FROM orders AS o
+    RIGHT JOIN employees AS e ON e.employee_id = o.employee_id;
+
+-- FULL OUTER JOIN
+-- Returns all rows from both tables, whether the ON condition matches or not.
+-- If no match exists, NULL values are returned for the columns of the unmatched table.
+-- FULL OUTER JOIN is not strict for the any of the table
+
+SELECT o.status, o.order_id, e.email, e.first_name
+FROM orders AS o
+    FULL OUTER JOIN employees AS e ON e.employee_id = o.employee_id;
