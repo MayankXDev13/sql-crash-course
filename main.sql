@@ -538,3 +538,207 @@ SELECT
 FROM
     employees as emp
     LEFT JOIN employees as manager_tbl on emp.manager_id = manager_tbl.employee_id;
+
+-- ! Aggregation start
+-- ! Give me total count customers on our platform
+
+-- College: 5 students
+-- 5LPA, 10, 5, 10, 15
+-- what is an average CTC of the college:
+-- Total CTC across students / numbers of students
+-- 5 + 10 + 5 + 10 + 15 / 5
+-- 9 LPA -> Average CTA of my college
+-- total CTC awarded: 5 + 10 + 5 + 10 + 15 = 45LPA
+
+--  I had 5 entries on student level
+-- I reduced those 5 entries in a single college level entry
+
+-- Give me total count customers on our platform
+
+SELECT * FROM customers;
+
+SELECT
+    COUNT(*) as cust_count,
+    COUNT(phone) as cust_with_phone_number
+FROM customers;
+
+SELECT COUNT(DISTINCT country) FROM customers;
+
+-- Give me total revenue across all orders till now
+
+SELECT
+    order_item_id,
+    quantity,
+    unit_price,
+    quantity * unit_price as total_selling_val
+FROM order_items;
+
+SELECT SUM(quantity * unit_price) as total_revenue FROM order_items;
+
+-- give average price of product across all products
+
+SELECT * FROM products;
+
+SELECT ROUND(AVG(price)) as avg_price FROM products;
+
+-- give me min price and max price across all prducts
+SELECT min(price) as min_price, max(price) as max_price
+FROM products;
+
+SELECT
+    count(*) as total_product,
+    round(avg(price), 2) as avg_price,
+    min(price) as min_price,
+    max(price) as max_price,
+    sum(stock_quantity) as total_stock
+FROM products;
+
+SELECT * FROM products;
+
+SELECT count(*) as product_count FROM products;
+
+-- Give me total number of proucts in each category
+
+SELECT category_id, count(*) FROM products GROUP BY category_id;
+
+-- Give me total number of active and inactive
+-- products in each categroy
+
+SELECT category_id, is_active, count(*)
+FROM products
+GROUP BY
+    category_id,
+    is_active;
+
+-- Give me total number of proucts in each category
+-- Include category name in the result
+
+SELECT p.category_id, c.category_name, count(*)
+FROM products as p
+    LEFT JOIN categories as c on c.category_id = p.category_id
+GROUP BY
+    p.category_id,
+    c.category_name;
+
+-- Give me total number of products in each category
+
+-- Use the HAVING clause to apply conditions to aggregated results.
+SELECT category_id, count(*)
+FROM products
+GROUP BY
+    category_id
+HAVING
+    count(*) > 5;
+
+-- Find departments having more than one managed employee,
+-- where their combined salary of whole department exceeds 200000 reupees.
+
+-- HAVING comes after GROUP BY
+-- WHERE comes before GROUP BY
+
+SELECT
+    department_id,
+    count(*) as dep_epm,
+    sum(salary) as total_dep_salary
+FROM employees
+WHERE
+    manager_id IS NOT NULL
+GROUP BY
+    department_id
+HAVING
+    count(*) > 1;
+
+SELECT
+    department_id,
+    count(*) as dep_epm,
+    sum(salary) as total_dep_salary
+FROM employees
+WHERE
+    manager_id IS NOT NULL
+GROUP BY
+    department_id
+HAVING
+    count(*) > 1
+    AND sum(salary) > 200000;
+
+SELECT * FROM employees;
+
+-- ========= Aggregation End ========
+
+-- Subquery start
+
+-- Give me all the customer having at least one cancelled order
+
+SELECT customer_id FROM orders WHERE status = 'cancelled';
+
+SELECT *
+FROM customers
+WHERE
+    customer_id IN (
+        SELECT customer_id
+        FROM orders
+        WHERE
+            status = 'cancelled'
+    );
+
+SELECT * FROM customers;
+
+SELECT * FROM orders;
+
+SELECT *
+FROM customers as cus
+    LEFT JOIN orders as o on o.customer_id = cus.customer_id
+WHERE
+    o.status = 'cancelled';
+
+-- Give me all the products which are having
+-- price > average price across all products
+
+SELECT * FROM products;
+
+SELECT avg(price) FROM products;
+
+SELECT product_id, product_name
+FROM products
+WHERE
+    price > (
+        SELECT avg(price)
+        FROM products
+    );
+
+-- give me sales on category level
+-- electronics - 3000
+-- clothing - 4000
+-- give me categories having sales > 500
+-- return category name in the result
+
+SELECT * FROM orders;
+
+SELECT * FROM order_items;
+
+SELECT * FROM products;
+
+SELECT * FROM categories;
+
+-- derived table
+SELECT c.category_id, c.category_name, category_stats.category_sales
+FROM (
+        SELECT p.category_id as stat_id, sum(oi.quantity * oi.unit_price) as category_sales
+        FROM order_items as oi
+            LEFT JOIN products as p on p.product_id = oi.product_id
+        GROUP BY
+            p.category_id
+    ) as category_stats
+LEFT JOIN categories as c ON c.category_id = category_stats.stat_id
+WHERE
+    category_sales > 500;
+
+
+
+SELECT p.category_id, sum(oi.quantity * oi.unit_price) as category_sales
+FROM order_items as oi
+    LEFT JOIN products as p on p.product_id = oi.product_id
+GROUP BY
+    p.category_id
+HAVING
+    sum(oi.quantity * oi.unit_price) > 500;
