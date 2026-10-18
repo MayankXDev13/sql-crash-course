@@ -802,22 +802,81 @@ WITH
         SELECT AVG(cum_spe)
         FROM customer_spe
     )
-SELECT * FROM customer_avg_spe, customer_spe;
+SELECT *
+FROM customer_avg_spe, customer_spe;
 
-
- WITH customer_total as (
-    SELECT
-        o.customer_id,
-        SUM(oi.quantity * oi.unit_price) AS customer_spend
-    FROM orders as o
-    LEFT JOIN order_items as oi
-    ON oi.order_id = o.order_id
-    WHERE o.status = 'completed'
-    GROUP BY o.customer_id
-)
-SELECT 
+WITH
+    customer_total as (
+        SELECT o.customer_id, SUM(oi.quantity * oi.unit_price) AS customer_spend
+        FROM orders as o
+            LEFT JOIN order_items as oi ON oi.order_id = o.order_id
+        WHERE
+            o.status = 'completed'
+        GROUP BY
+            o.customer_id
+    )
+SELECT
     ct.customer_id,
     ct.customer_spend,
-    ROUND((SELECT AVG(customer_spend) FROM customer_total), 2) AS avg_sepend,
-    ct.customer_spend > ROUND((SELECT AVG(customer_spend) FROM customer_total), 2) AS is_above_avg
+    ROUND(
+        (
+            SELECT AVG(customer_spend)
+            FROM customer_total
+        ),
+        2
+    ) AS avg_sepend,
+    ct.customer_spend > ROUND(
+        (
+            SELECT AVG(customer_spend)
+            FROM customer_total
+        ),
+        2
+    ) AS is_above_avg
 FROM customer_total as ct;
+
+-- ============= CTE Ends =================
+-- Window Functions Start
+
+-- Give me total product's price sum on category level
+
+SELECT category_id, SUM(price)
+FROM products
+GROUP BY
+    category_id;
+
+-- Window func
+SELECT
+    product_name,
+    price,
+    category_id,
+    SUM(price) OVER (
+        PARTITION BY
+            category_id
+    ) as category_total_price
+FROM products;
+
+-- Without affecting or reducing the table structure
+-- Give me average price across all the products
+
+SELECT *, AVG(price) OVER () as avg_price FROM products;
+
+-- Give rank to a product based on how pricy it it
+
+SELECT
+    product_name,
+    price,
+    ROW_NUMBER() OVER (ORDER BY price DESC) AS prod_rank_on_price,
+    RANK() OVER (ORDER BY price DESC) AS prod_rank,
+    DENSE_RANK() OVER (ORDER BY price DESC) AS prod_dense_rank
+FROM products;
+
+-- ! ============ Window Functions End =================
+-- ! UNION and UNION ALL
+--  ! Give me list of users/humans that are there inside the community
+SELECT first_name, last_name FROM employees
+UNION ALL
+SELECT first_name, last_name FROM customers;
+
+-- ! ========== UNION and UNION ALL end ============
+-- ! Create an index
+CREATE INDEX idx_customer_email ON customers(email);
