@@ -729,11 +729,9 @@ FROM (
         GROUP BY
             p.category_id
     ) as category_stats
-LEFT JOIN categories as c ON c.category_id = category_stats.stat_id
+    LEFT JOIN categories as c ON c.category_id = category_stats.stat_id
 WHERE
     category_sales > 500;
-
-
 
 SELECT p.category_id, sum(oi.quantity * oi.unit_price) as category_sales
 FROM order_items as oi
@@ -742,3 +740,84 @@ GROUP BY
     p.category_id
 HAVING
     sum(oi.quantity * oi.unit_price) > 500;
+
+-- ! ================= Subquery ends ===================
+-- ! CTE Starts
+-- ! CTE - Common Table Expressions
+
+WITH
+    category_stats as (
+        SELECT p.category_id, sum(oi.quantity * oi.unit_price) as category_sales
+        FROM order_items as oi
+            LEFT JOIN products as p on p.product_id = oi.product_id
+        GROUP BY
+            p.category_id
+    )
+SELECT c.category_name, ct.category_sales
+FROM
+    category_stats as ct
+    LEFT JOIN categories as c ON c.category_id = ct.category_id;
+
+-- WITH var_name as (
+--     ...SQL query
+-- )
+
+WITH
+    category_stats as (
+        SELECT p.category_id, sum(oi.quantity * oi.unit_price) as category_sales
+        FROM order_items as oi
+            LEFT JOIN products as p on p.product_id = oi.product_id
+        GROUP BY
+            p.category_id
+    ),
+    hsc as (
+        SELECT *
+        FROM category_stats
+        ORDER BY category_sales DESC
+        LIMIT 1
+    )
+SELECT c.category_name, hsc.category_sales
+FROM hsc
+    LEFT JOIN categories AS c on c.category_id = hsc.category_id;
+
+-- Reusability
+
+-- Give me total spend of a customer
+-- Also give me average spend of all customer
+-- Also give me flag True or False basic of if the customer have above average spending
+
+SELECT * FROM orders;
+
+SELECT * FROM order_items;
+
+WITH
+    customer_spe as (
+        SELECT o.customer_id, SUM(oi.quantity * oi.unit_price) as cum_spe
+        FROM orders as o
+            LEFT JOIN order_items as oi ON o.order_id = oi.order_id
+        GROUP BY
+            o.customer_id
+    ),
+    customer_avg_spe as (
+        SELECT AVG(cum_spe)
+        FROM customer_spe
+    )
+SELECT * FROM customer_avg_spe, customer_spe;
+
+
+ WITH customer_total as (
+    SELECT
+        o.customer_id,
+        SUM(oi.quantity * oi.unit_price) AS customer_spend
+    FROM orders as o
+    LEFT JOIN order_items as oi
+    ON oi.order_id = o.order_id
+    WHERE o.status = 'completed'
+    GROUP BY o.customer_id
+)
+SELECT 
+    ct.customer_id,
+    ct.customer_spend,
+    ROUND((SELECT AVG(customer_spend) FROM customer_total), 2) AS avg_sepend,
+    ct.customer_spend > ROUND((SELECT AVG(customer_spend) FROM customer_total), 2) AS is_above_avg
+FROM customer_total as ct;
